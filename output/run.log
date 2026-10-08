@@ -1,0 +1,64 @@
+
+========================================================
+ PROYECTO : Bitrix24 Cloud Data Analytics Suite
+ AUTOR    : Alejandro Adrian Duhalde
+ CONTACTO : aaduhalde@outlook.es
+
+ INICIO   : 2026-10-08 15:56:11.594037
+========================================================
+
+===== Ejecutando: bitrix24_auth.py =====
+Consultando Bitrix24...
+
+Conexión exitosa con Bitrix24
+
+Usuario autenticado
+Admin    : Sí
+
+Permisos por módulo:
+✔ Usuario administrador
+✔ Acceso total a todos los módulos (CRM, tareas, usuarios, etc.)
+===== Fin: bitrix24_auth.py | exit code 0 =====
+
+===== Ejecutando: volumen_datos.py =====
+
+=== AUDITORÍA DE VOLUMEN DE DATOS BITRIX24 ===
+
+Leads (crm.lead): 1,781 registros
+Deals (crm.deal): 13,977 registros
+Contactos (crm.contact): 12,623 registros
+Empresas (crm.company): 3,881 registros
+Tareas (tasks.task): 23,233 registros
+===== Fin: volumen_datos.py | exit code 0 =====
+
+===== Ejecutando: crm_productividad_deal.py =====
+Realizando extraccion completa...
+Nuevos registros extraidos: 13977
+Transformando nuevos datos...
+Actualizando archivo CSV...
+CSV actualizado correctamente en: /home/alex/GIT/PRIVATE/cloud-data-analytics-suite/data/processed/crm_productividad_deals_1.csv
+===== Fin: crm_productividad_deal.py | exit code 0 =====
+
+===== Ejecutando: crm_peritos_deals.py =====
+Realizando extraccion completa...
+Nuevos registros extraidos: 13977
+Transformando nuevos datos...
+Actualizando archivo CSV...
+CSV actualizado correctamente en: /home/alex/GIT/PRIVATE/cloud-data-analytics-suite/data/processed/crm_peritos_deals_2.csv
+===== Fin: crm_peritos_deals.py | exit code 0 =====
+
+===== Ejecutando: crm_marketing_ventas.py =====
+Buscando Leads nuevos (ID > None)...
+Buscando Deals nuevos (ID > None)...
+Transformando datos nuevos...
+Actualizando archivos CSV...
+Se agregaron 1781 filas a: crm_marketing_leads_3.csv
+Se agregaron 13977 filas a: crm_marketing_deals_3.csv
+Proceso completado.
+===== Fin: crm_marketing_ventas.py | exit code 0 =====
+
+========================================================
+ FIN PIPELINE : 2026-10-08 16:06:56.684136
+ DURACIÓN     : 0:10:45.090099
+ ESTADO       : FINALIZADO
+========================================================
