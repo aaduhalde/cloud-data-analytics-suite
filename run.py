@@ -25,12 +25,16 @@ load_dotenv(dotenv_path=ENV_PATH)
 LOG_FILE = BASE_DIR / "output" / "run.log"
 
 SCRIPTS = [
+    BASE_DIR / "auth" / "driver_postgres.py",
     BASE_DIR / "auth" / "bitrix24_auth.py",
     BASE_DIR / "scripts" / "volumen_datos.py",  # Auditar volumen de datos
     BASE_DIR / "scripts" / "crm_productividad_deal.py",
     BASE_DIR / "scripts" / "crm_peritos_deals.py",
     BASE_DIR / "scripts" / "crm_marketing_ventas.py",
-]
+    BASE_DIR / "scripts" / "01_run_schema.py",
+    BASE_DIR / "scripts" / "load_csv_to_postgres.py",
+    BASE_DIR / "scripts" / "02_run_views.py",
+    ]
 
 # =====================================
 # HELPERS

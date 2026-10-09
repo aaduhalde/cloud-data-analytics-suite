@@ -4,8 +4,13 @@
  AUTOR    : Alejandro Adrian Duhalde
  CONTACTO : aaduhalde@outlook.es
 
- INICIO   : 2026-10-08 15:56:11.594037
+ INICIO   : 2026-10-08 22:28:27.517260
 ========================================================
+
+===== Ejecutando: driver_postgres.py =====
+⚠️ La base de datos 'cdas' no existe. Creándola...
+✅ Base de datos 'cdas' creada exitosamente.
+===== Fin: driver_postgres.py | exit code 0 =====
 
 ===== Ejecutando: bitrix24_auth.py =====
 Consultando Bitrix24...
@@ -25,26 +30,26 @@ Permisos por módulo:
 === AUDITORÍA DE VOLUMEN DE DATOS BITRIX24 ===
 
 Leads (crm.lead): 1,781 registros
-Deals (crm.deal): 13,977 registros
-Contactos (crm.contact): 12,623 registros
+Deals (crm.deal): 13,979 registros
+Contactos (crm.contact): 12,624 registros
 Empresas (crm.company): 3,881 registros
-Tareas (tasks.task): 23,233 registros
+Tareas (tasks.task): 23,235 registros
 ===== Fin: volumen_datos.py | exit code 0 =====
 
 ===== Ejecutando: crm_productividad_deal.py =====
-Realizando extraccion completa...
-Nuevos registros extraidos: 13977
-Transformando nuevos datos...
-Actualizando archivo CSV...
-CSV actualizado correctamente en: /home/alex/GIT/PRIVATE/cloud-data-analytics-suite/data/processed/crm_productividad_deals_1.csv
+📥 Realizando extracción completa...
+📊 Nuevos registros extraídos desde Bitrix24: 13979
+⚙️ Transformando nuevos datos...
+💾 Actualizando archivo CSV procesado...
+🎉 CSV actualizado correctamente en: /home/alex/GIT/PUBLIC/cloud-data-analytics-suite/data/processed/crm_productividad_deals_1.csv
 ===== Fin: crm_productividad_deal.py | exit code 0 =====
 
 ===== Ejecutando: crm_peritos_deals.py =====
 Realizando extraccion completa...
-Nuevos registros extraidos: 13977
+Nuevos registros extraidos: 13979
 Transformando nuevos datos...
 Actualizando archivo CSV...
-CSV actualizado correctamente en: /home/alex/GIT/PRIVATE/cloud-data-analytics-suite/data/processed/crm_peritos_deals_2.csv
+CSV actualizado correctamente en: /home/alex/GIT/PUBLIC/cloud-data-analytics-suite/data/processed/crm_peritos_deals_2.csv
 ===== Fin: crm_peritos_deals.py | exit code 0 =====
 
 ===== Ejecutando: crm_marketing_ventas.py =====
@@ -53,12 +58,73 @@ Buscando Deals nuevos (ID > None)...
 Transformando datos nuevos...
 Actualizando archivos CSV...
 Se agregaron 1781 filas a: crm_marketing_leads_3.csv
-Se agregaron 13977 filas a: crm_marketing_deals_3.csv
+Se agregaron 13979 filas a: crm_marketing_deals_3.csv
 Proceso completado.
 ===== Fin: crm_marketing_ventas.py | exit code 0 =====
 
+===== Ejecutando: 01_run_schema.py =====
+🏗️ Ejecutando scripts de Esquema/DDL (1 archivos en sql/schema/):
+
+ℹ️ Base de datos 'cdas' verificada en el servidor.
+▶️ Ejecutando: sql/schema/01_init_db.sql ... ✅ [OK]
+
+🎉 Esquema y tablas base creados/verificados exitosamente.
+===== Fin: 01_run_schema.py | exit code 0 =====
+
+===== Ejecutando: load_csv_to_postgres.py =====
+ℹ️ Base de datos 'cdas' verificada en el servidor.
+🚀 Cargando crm_productividad_deals_1.csv en raw.crm_productividad_deals...
+✅ (13979 filas procesadas)
+
+🚀 Cargando crm_peritos_deals_2.csv en raw.crm_peritos_deals...
+✅ (13979 filas procesadas)
+
+🚀 Cargando crm_marketing_leads_3.csv en raw.crm_marketing_leads...
+✅ (1781 filas procesadas)
+
+🚀 Cargando crm_marketing_deals_3.csv en raw.crm_marketing_deals...
+✅ (13979 filas procesadas)
+
+💾 Transacción confirmada exitosamente en PostgreSQL.
+
+============================================================
+📋 PRUEBAS DE INTEGRIDAD Y VALIDACIÓN DE CARGA
+============================================================
+
+📌 Tabla: raw.crm_productividad_deals
+   • Total registros insertados : 13979
+   • Duplicados detectados      : 0 ✅ [OK]
+   • Muestra de IDs recientes   : [(33095, datetime.datetime(2026, 10, 8, 21, 25, 19, tzinfo=datetime.timezone.utc)), (33093, datetime.datetime(2026, 10, 8, 21, 24, 4, tzinfo=datetime.timezone.utc))]
+
+📌 Tabla: raw.crm_peritos_deals
+   • Total registros insertados : 13979
+   • Duplicados detectados      : 0 ✅ [OK]
+   • Muestra de IDs recientes   : [(33095, datetime.datetime(2026, 10, 8, 21, 25, 19, tzinfo=datetime.timezone.utc)), (33093, datetime.datetime(2026, 10, 8, 21, 24, 4, tzinfo=datetime.timezone.utc))]
+
+📌 Tabla: raw.crm_marketing_leads
+   • Total registros insertados : 1781
+   • Duplicados detectados      : 0 ✅ [OK]
+   • Muestra de IDs recientes   : [(6023, datetime.datetime(2026, 10, 8, 19, 55, 3, tzinfo=datetime.timezone.utc)), (6021, datetime.datetime(2026, 10, 8, 16, 10, 18, tzinfo=datetime.timezone.utc))]
+
+📌 Tabla: raw.crm_marketing_deals
+   • Total registros insertados : 13979
+   • Duplicados detectados      : 0 ✅ [OK]
+   • Muestra de IDs recientes   : [(33095, datetime.datetime(2026, 10, 8, 21, 25, 19, tzinfo=datetime.timezone.utc)), (33093, datetime.datetime(2026, 10, 8, 21, 24, 4, tzinfo=datetime.timezone.utc))]
+===== Fin: load_csv_to_postgres.py | exit code 0 =====
+
+===== Ejecutando: 02_run_views.py =====
+📊 Creando/Actualizando Vistas Analíticas (3 archivos en sql/views/):
+
+ℹ️ Base de datos 'cdas' verificada en el servidor.
+▶️ Ejecutando: sql/views/01_vw_productividad.sql ... ✅ [OK]
+▶️ Ejecutando: sql/views/02_vw_peritos.sql ... ✅ [OK]
+▶️ Ejecutando: sql/views/03_vw_marketing.sql ... ✅ [OK]
+
+🎉 Todas las vistas analíticas se crearon/actualizaron correctamente.
+===== Fin: 02_run_views.py | exit code 0 =====
+
 ========================================================
- FIN PIPELINE : 2026-10-08 16:06:56.684136
- DURACIÓN     : 0:10:45.090099
+ FIN PIPELINE : 2026-10-08 22:41:00.330909
+ DURACIÓN     : 0:12:32.813649
  ESTADO       : FINALIZADO
 ========================================================

@@ -9,3 +9,4 @@ pyyaml
 python-dateutil
 path
 dotenv
+psycopg2-binary

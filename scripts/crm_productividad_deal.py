@@ -1,51 +1,57 @@
+import sys
 from pathlib import Path
 import requests
 import pandas as pd
-import sys
 
-# =====================================
-# CONFIGURACIÓN
-# =====================================
+# =============================================================================
+# RESOLUCIÓN ABSOLUTA DE RUTAS DE REPOSITORIO
+# =============================================================================
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from auth.bitrix_config import BITRIX_WEBHOOK_URL
 
-# =====================================
-# PATHS PORTABLES
-# =====================================
-
+# =============================================================================
+# PATHS PORTABLES Y SALIDA
+# =============================================================================
 OUTPUT_CSV = PROJECT_ROOT / "data" / "processed" / "crm_productividad_deals_1.csv"
 OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
-# =====================================
-# CAMPOS CUSTOM BITRIX (AJUSTABLES)
-# =====================================
+# =============================================================================
+# CAMPOS CUSTOM BITRIX
+# =============================================================================
+FIELD_KM = "UF_CRM_1715249307354"         # Km recorridos
+FIELD_VISIT_DATE = "UF_CRM_1715249711"   # Fecha de visita
+FIELD_DEADLINE = "UF_CRM_DEADLINE"       # Fecha objetivo / SLA
 
-FIELD_KM = "UF_CRM_1715249307354"       # Km recorridos
-FIELD_VISIT_DATE = "UF_CRM_1715249711"  # Fecha de visita
-FIELD_DEADLINE = "UF_CRM_DEADLINE"      # Fecha objetivo / SLA (si existe)
-
-# =====================================
+# =============================================================================
 # HELPER INCREMENTAL
-# =====================================
+# =============================================================================
 
 def get_last_id(csv_path):
-    """Obtiene el último ID registrado en el CSV de manera eficiente."""
+    """Obtiene el último ID registrado en el CSV soportando comas y tabulaciones."""
     if not csv_path.exists():
         return None
     try:
-        df_ids = pd.read_csv(csv_path, usecols=["ID"])
+        # Detectar el delimitador leyendo las primeras líneas
+        with open(csv_path, "r", encoding="utf-8") as f:
+            sample = f.read(2048)
+            delimiter = "\t" if "\t" in sample else ","
+
+        df_ids = pd.read_csv(csv_path, sep=delimiter, usecols=lambda col: col.strip().upper() == "ID")
         if not df_ids.empty:
-            return int(df_ids["ID"].max())
+            id_col = df_ids.columns[0]
+            return int(pd.to_numeric(df_ids[id_col], errors="coerce").max())
     except Exception as e:
-        print(f"No se pudo leer el CSV existente ({e}). Se realizara una carga completa.")
+        print(f"⚠️ No se pudo leer el CSV existente ({e}). Se realizará una extracción completa.")
     return None
 
-# =====================================
-# FUNCIÓN GENÉRICA DE PAGINACIÓN
-# =====================================
+# =============================================================================
+# FUNCIÓN GENÉRICA DE PAGINACIÓN BITRIX24
+# =============================================================================
 
 def fetch_all(method, params=None):
     all_items = []
@@ -72,9 +78,9 @@ def fetch_all(method, params=None):
 
     return all_items
 
-# =====================================
+# =============================================================================
 # EXTRACCIÓN DE DEALS
-# =====================================
+# =============================================================================
 
 def extract_deals(last_id=None):
     fields = [
@@ -92,7 +98,6 @@ def extract_deals(last_id=None):
 
     params = {"select": fields}
 
-    # Aplicar filtro incremental si existe un ID previo
     if last_id is not None:
         params["filter"] = {">ID": last_id}
 
@@ -103,22 +108,22 @@ def extract_deals(last_id=None):
 
     return pd.DataFrame(deals)
 
-# =====================================
+# =============================================================================
 # TRANSFORMACIONES PRODUCTIVIDAD
-# =====================================
+# =============================================================================
 
 def transform_deals(df):
     if df.empty:
         return df
 
     # -----------------------------
-    # Normalización de fechas
+    # Normalización de fechas a UTC y tz-naive (resuelve el error de zonas horarias)
     # -----------------------------
     date_cols = ["DATE_CREATE", "CLOSEDATE", FIELD_VISIT_DATE, FIELD_DEADLINE]
 
     for col in date_cols:
         if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors="coerce")
+            df[col] = pd.to_datetime(df[col], errors="coerce", utc=True).dt.tz_localize(None)
 
     # -----------------------------
     # Informe emitido
@@ -161,7 +166,7 @@ def transform_deals(df):
         df["on_time"] = None
 
     # -----------------------------
-    # Ratio aceptación de presupuestos (proxy)
+    # Ratio aceptación de presupuestos
     # -----------------------------
     df["budget_accepted"] = (
         pd.to_numeric(df["OPPORTUNITY"], errors="coerce").fillna(0) > 0
@@ -169,39 +174,47 @@ def transform_deals(df):
 
     return df
 
-# =====================================
+# =============================================================================
 # MAIN
-# =====================================
+# =============================================================================
 
 def main():
     last_id = get_last_id(OUTPUT_CSV)
     if last_id is not None:
-        print(f"Modo incremental activo. Buscando deals con ID > {last_id}")
+        print(f"🔄 Modo incremental activo. Buscando deals con ID > {last_id}")
     else:
-        print("Realizando extraccion completa...")
+        print("📥 Realizando extracción completa...")
 
     df_new = extract_deals(last_id=last_id)
-    print(f"Nuevos registros extraidos: {len(df_new)}")
+    print(f"📊 Nuevos registros extraídos desde Bitrix24: {len(df_new)}")
 
     if df_new.empty:
-        print("El CSV esta al dia. No hay registros nuevos.")
+        print("✅ El CSV está al día. No hay registros nuevos.")
         return
 
-    print("Transformando nuevos datos...")
+    print("⚙️ Transformando nuevos datos...")
     df_new = transform_deals(df_new)
 
-    print("Actualizando archivo CSV...")
+    print("💾 Actualizando archivo CSV procesado...")
     file_exists = OUTPUT_CSV.exists()
+
+    # Detectar el delimitador del archivo existente
+    delimiter = "\t"
+    if file_exists:
+        with open(OUTPUT_CSV, "r", encoding="utf-8") as f:
+            sample = f.read(2048)
+            delimiter = "\t" if "\t" in sample else ","
 
     df_new.to_csv(
         OUTPUT_CSV,
         mode="a" if file_exists else "w",
+        sep=delimiter,
         header=not file_exists,
         index=False,
         encoding="utf-8"
     )
 
-    print(f"CSV actualizado correctamente en: {OUTPUT_CSV}")
+    print(f"🎉 CSV actualizado correctamente en: {OUTPUT_CSV}")
 
 if __name__ == "__main__":
     main()
